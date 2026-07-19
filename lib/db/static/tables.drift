@@ -1,0 +1,12 @@
+CREATE TABLE methods (
+    id INT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    placeNotation TEXT NOT NULL,
+    stage INTEGER NOT NULL,
+    details TEXT
+) STRICT;
+CREATE INDEX idx_methods_name ON methods (name);
+
+createEntry: INSERT INTO methods (id, name, placeNotation, stage) VALUES (:id, :name, :placeNotation, :stage);
+search: SELECT * FROM methods WHERE name LIKE :name LIMIT :limit;
+get: SELECT * FROM methods WHERE id = :id;

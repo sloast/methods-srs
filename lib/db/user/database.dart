@@ -1,0 +1,70 @@
+import 'package:drift/drift.dart';
+import 'package:drift_flutter/drift_flutter.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:fsrs/fsrs.dart' as fsrs;
+
+import '../../core/model.dart' show CardType;
+
+import 'tables.dart';
+
+part 'database.g.dart';
+
+@DriftDatabase(tables: tables)
+class UserDatabase extends _$UserDatabase {
+  UserDatabase([QueryExecutor? executor])
+    : super(executor ?? _openConnection());
+
+  @override
+  int get schemaVersion => 1;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+    },
+  );
+
+  Future<void> reset() async {
+    await customStatement('PRAGMA foreign_keys = OFF');
+
+    final m = Migrator(this);
+    for (final table in allTables) {
+      await m.deleteTable(table.actualTableName);
+      await m.createTable(table);
+    }
+
+    await customStatement('PRAGMA foreign_keys = ON');
+  }
+
+  static QueryExecutor _openConnection() {
+    return driftDatabase(
+      name: 'methods',
+      native: DriftNativeOptions(
+        databasePath: () async => p.join(
+          (await getApplicationDocumentsDirectory()).path,
+          'methods.sqlite',
+        ),
+      ),
+      web: DriftWebOptions(
+        sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+        driftWorker: Uri.parse('drift_worker.dart.js'),
+      ),
+    );
+  }
+
+  // Queries
+
+  Future<(Card, Deck)?> nextCard({bool unlearned = true}) async {
+    var where =
+        cards.due.isSmallerOrEqualValue(DateTime.now()) & cards.paused.not();
+
+    final query =
+        select(cards).join([innerJoin(decks, decks.id.equalsExp(cards.deck))])
+          ..where(unlearned ? where : where & cards.learned)
+          ..limit(1);
+    final result = await query.getSingleOrNull();
+    if (result == null) return null;
+    return (result.readTable(cards), result.readTable(decks));
+  }
+}
