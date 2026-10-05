@@ -379,7 +379,7 @@ abstract class _$StaticDatabase extends GeneratedDatabase {
         Variable<String>(placeNotation),
         Variable<int>(stage),
       ],
-      updates: {methods},
+      updates: {this.methods},
     );
   }
 
@@ -387,16 +387,16 @@ abstract class _$StaticDatabase extends GeneratedDatabase {
     return customSelect(
       'SELECT * FROM methods WHERE name LIKE ?1 LIMIT ?2',
       variables: [Variable<String>(name), Variable<int>(limit)],
-      readsFrom: {methods},
-    ).asyncMap(methods.mapFromRow);
+      readsFrom: {this.methods},
+    ).asyncMap(this.methods.mapFromRow);
   }
 
   Selectable<Method> get(int id) {
     return customSelect(
       'SELECT * FROM methods WHERE id = ?1',
       variables: [Variable<int>(id)],
-      readsFrom: {methods},
-    ).asyncMap(methods.mapFromRow);
+      readsFrom: {this.methods},
+    ).asyncMap(this.methods.mapFromRow);
   }
 
   @override
@@ -572,7 +572,16 @@ class $MethodsTableManager
                 details: details,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<Methods, Method>(table),
+                  BaseReferences<_$StaticDatabase, Methods, Method>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),

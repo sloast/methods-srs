@@ -2029,8 +2029,10 @@ class $$DecksTableTableManager
               ),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) =>
-                    (e.readTable(table), $$DecksTableReferences(db, table, e)),
+                (e) => (
+                  e.readTable<$DecksTable, Deck>(table),
+                  $$DecksTableReferences(db, table, e),
+                ),
               )
               .toList(),
           prefetchHooksCallback: ({cardsRefs = false}) {
@@ -2526,8 +2528,10 @@ class $$CardsTableTableManager
               ),
           withReferenceMapper: (p0) => p0
               .map(
-                (e) =>
-                    (e.readTable(table), $$CardsTableReferences(db, table, e)),
+                (e) => (
+                  e.readTable<$CardsTable, Card>(table),
+                  $$CardsTableReferences(db, table, e),
+                ),
               )
               .toList(),
           prefetchHooksCallback: ({deck = false, reviewLogsRefs = false}) {
@@ -2754,7 +2758,16 @@ class $$CustomMethodsTableTableManager
                 stage: stage,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$CustomMethodsTable, CustomMethod>(table),
+                  BaseReferences<
+                    _$UserDatabase,
+                    $CustomMethodsTable,
+                    CustomMethod
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -3030,7 +3043,7 @@ class $$ReviewLogsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$ReviewLogsTable, ReviewLog>(table),
                   $$ReviewLogsTableReferences(db, table, e),
                 ),
               )
