@@ -87,6 +87,23 @@ class Repository {
     return res.map(toDeck).toList();
   }
 
+  Future<List<(m.MethodDeck, int)>> listDecksAndDueCount() async {
+    final cardCount = udb.cards.id.count();
+    final res =
+        await (udb.select(udb.decks).join([
+                leftOuterJoin(
+                  udb.cards,
+                  udb.cards.deck.equalsExp(udb.decks.id) & udb.cardFilter,
+                ),
+              ])
+              ..addColumns([cardCount])
+              ..groupBy([udb.decks.id]))
+            .get();
+    return res
+        .map((r) => (toDeck(r.readTable(udb.decks)), r.read(cardCount)!))
+        .toList();
+  }
+
   Future<m.MethodDeck> createDeck(
     m.Method method, [
     bool createCards = true,

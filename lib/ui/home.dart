@@ -46,13 +46,13 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   late final allMethods = repo.searchMethods("", limit: 99999);
   final searchController = TextEditingController();
   String? searchQuery;
-  late Future<List<MethodDeck>> decks;
+  late Future<List<(MethodDeck, int)>> decks;
   late Future<List<Method>> methods;
 
   int currentPageIndex = 0;
 
   void reload([dynamic _]) {
-    decks = repo.listDecks();
+    decks = repo.listDecksAndDueCount();
     runSearch();
   }
 
@@ -73,6 +73,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     reload();
   }
 
@@ -121,16 +122,12 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
               children: [
                 list(
                   decks,
-                  (d) => Card(
-                    child: ListTile(
-                      leading: Icon(Icons.my_library_books_outlined),
-                      title: Text(d.name),
-                      onTap: () => context
-                          .push((_) => DeckViewPage(deck: d))
-                          .then(reload),
-                      trailing: IconButton(
-                        icon: Icon(Icons.open_in_new_rounded),
-                        onPressed: () async {
+                  t2<MethodDeck, int, Widget>(
+                    (d, i) => Card(
+                      child: ListTile(
+                        leading: Icon(Icons.my_library_books_outlined),
+                        title: Text(d.name),
+                        onTap: () async {
                           final m = await repo.getMethodFromDeck(d);
                           if (context.mounted) {
                             if (m != null) {
@@ -140,6 +137,26 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                             }
                           }
                         },
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "$i",
+                              style: context.textTheme.titleMedium?.copyWith(
+                                color: switch (i) {
+                                  0 => Colors.grey,
+                                  _ => Colors.greenAccent,
+                                },
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.settings),
+                              onPressed: () => context
+                                  .push((_) => DeckViewPage(deck: d))
+                                  .then(reload),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -254,11 +271,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
         ][currentPageIndex],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => (
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (ctx) => ReviewPage())),
-        ),
+        onPressed: () => (context.push((ctx) => ReviewPage()).then(reload),),
         tooltip: 'Study',
         label: Text('Study'),
         icon: const Icon(Symbols.cards_stack),

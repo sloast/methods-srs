@@ -66,13 +66,13 @@ class UserDatabase extends _$UserDatabase {
 
   // Queries
 
-  Future<(Card, Deck)?> nextCard({bool unlearned = true}) async {
-    var where =
-        cards.due.isSmallerOrEqualValue(DateTime.now()) & cards.paused.not();
+  Expression<bool> get cardFilter =>
+      cards.due.isSmallerOrEqualValue(DateTime.now()) & cards.paused.not();
 
+  Future<(Card, Deck)?> nextCard({bool unlearned = true}) async {
     final query =
         select(cards).join([innerJoin(decks, decks.id.equalsExp(cards.deck))])
-          ..where(unlearned ? where : where & cards.learned)
+          ..where(unlearned ? cardFilter : cardFilter & cards.learned)
           ..orderBy([OrderingTerm.asc(cards.due)])
           ..limit(1);
     final result = await query.getSingleOrNull();
