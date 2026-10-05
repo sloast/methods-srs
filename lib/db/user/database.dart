@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path/path.dart' as p;
@@ -37,20 +39,29 @@ class UserDatabase extends _$UserDatabase {
     await customStatement('PRAGMA foreign_keys = ON');
   }
 
+  static Future<String> getDbPath() async =>
+      p.join((await getApplicationDocumentsDirectory()).path, 'methods.sqlite');
+
   static QueryExecutor _openConnection() {
     return driftDatabase(
       name: 'methods',
-      native: DriftNativeOptions(
-        databasePath: () async => p.join(
-          (await getApplicationDocumentsDirectory()).path,
-          'methods.sqlite',
-        ),
-      ),
+      native: DriftNativeOptions(databasePath: getDbPath),
       web: DriftWebOptions(
         sqlite3Wasm: Uri.parse('sqlite3.wasm'),
         driftWorker: Uri.parse('drift_worker.dart.js'),
       ),
     );
+  }
+
+  Future<void> import(Uint8List data) async {
+    await customStatement('PRAGMA wal_checkpoint(TRUNCATE)');
+    await close();
+    await File(await getDbPath()).writeAsBytes(data);
+  }
+
+  Future<Uint8List> export() async {
+    await customStatement('PRAGMA wal_checkpoint(TRUNCATE)');
+    return await File(await getDbPath()).readAsBytes();
   }
 
   // Queries

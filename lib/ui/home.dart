@@ -1,7 +1,9 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart' as fuzzy;
 import 'package:material_symbols_icons/material_symbols_icons.dart';
 import 'package:methods/core/model.dart';
+import 'package:methods/db/user/database.dart' as udb;
 import 'package:methods/ui/method.dart';
 import 'package:provider/provider.dart';
 
@@ -221,6 +223,29 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
                     )) {
                       repo.udb.reset();
                     }
+                  },
+                ),
+                OutlinedButton.icon(
+                  icon: Icon(Icons.download),
+                  label: Text('Import'),
+                  onPressed: () async {
+                    final file = await FilePicker.pickFile(
+                      dialogTitle: 'Import methods.sqlite...',
+                    );
+                    if (file == null) return;
+                    final data = await file.readAsBytes();
+                    await repo.udb.import(data);
+                    repo.udb = udb.UserDatabase();
+                  },
+                ),
+                OutlinedButton.icon(
+                  icon: Icon(Icons.upload),
+                  label: Text('Export'),
+                  onPressed: () async {
+                    await FilePicker.saveFile(
+                      fileName: 'methods.sqlite',
+                      bytes: await repo.udb.export(),
+                    );
                   },
                 ),
               ],

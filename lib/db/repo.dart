@@ -8,7 +8,7 @@ import '../core/model.dart' as m;
 import 'user/database.dart';
 
 class Repository {
-  final UserDatabase udb;
+  UserDatabase udb;
   final s.StaticDatabase sdb;
 
   Repository(this.udb, this.sdb);
