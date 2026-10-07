@@ -1,4 +1,7 @@
+import 'dart:math';
+
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart' as fuzzy;
 import 'package:material_symbols_icons/material_symbols_icons.dart';
@@ -61,14 +64,23 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   void runSearch([String? query]) {
     final q = (searchQuery = query ?? searchQuery ?? '').toLowerCase();
     setState(() {
-      methods = allMethods.then((a) {
+      methods = () async {
+        final a = await allMethods;
+
+        if (kIsWeb) {
+          final b = a
+              .where((m) => m.name.toLowerCase().startsWith(q))
+              .take(100);
+          return b.toList();
+        }
+
         final b = a.map((m) {
           final name = m.name.toLowerCase();
           return (m, fuzzy.ratio(q, name) + (name.startsWith(q) ? 50 : 0));
         }).toList();
         b.sort((x, y) => -x.$2.compareTo(y.$2));
-        return b.sublist(0, 100).map((m) => (m.$1)).toList();
-      });
+        return b.sublist(0, min(b.length, 100)).map((m) => (m.$1)).toList();
+      }();
     });
   }
 

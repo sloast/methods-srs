@@ -48,7 +48,7 @@ class UserDatabase extends _$UserDatabase {
       native: DriftNativeOptions(databasePath: getDbPath),
       web: DriftWebOptions(
         sqlite3Wasm: Uri.parse('sqlite3.wasm'),
-        driftWorker: Uri.parse('drift_worker.dart.js'),
+        driftWorker: Uri.parse('drift_worker.js'),
       ),
     );
   }
