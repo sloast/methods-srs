@@ -34,7 +34,7 @@ String concatWords(String? a, String? b) {
 
 void main(List<String> args) async {
   final inFile = File(args.isNotEmpty ? args[0] : ".local/CCCBR_methods.xml");
-  final document = XmlDocument.parse(inFile.readAsStringSync());
+  final document = XmlDocument(inFile.readAsStringSync());
 
   final db = StaticDatabase(NativeDatabase(File('method_library.sqlite')));
 

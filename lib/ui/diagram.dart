@@ -105,6 +105,7 @@ class DiagramContainer extends StatelessWidget {
     required this.insideBells,
     required this.leadLength,
     this.drawNums = true,
+    this.hideTreble = false,
     this.scale = 1.0,
   });
 
@@ -113,6 +114,7 @@ class DiagramContainer extends StatelessWidget {
   final List<int> insideBells;
   final int leadLength;
   final bool drawNums;
+  final bool hideTreble;
   final double scale;
 
   @override
@@ -130,6 +132,7 @@ class DiagramContainer extends StatelessWidget {
             insideBells: insideBells,
             leadLength: leadLength,
             drawNums: drawNums,
+            hideTreble: hideTreble,
             alpha: scale,
           ),
         ),
@@ -145,6 +148,7 @@ class MethodPainter extends CustomPainter {
     required this.insideBells,
     required this.leadLength,
     required this.drawNums,
+    required this.hideTreble,
     required this.alpha,
   });
 
@@ -153,6 +157,7 @@ class MethodPainter extends CustomPainter {
   final List<int> insideBells;
   final int leadLength;
   final bool drawNums;
+  final bool hideTreble;
   final double alpha;
 
   @override
@@ -223,7 +228,7 @@ class MethodPainter extends CustomPainter {
     if (leadLength > 0) {
       paint.color =
           Color.lerp(Colors.black, Colors.white, alpha) ?? Colors.white;
-      for (int i = leadLength; i < method.length; i += leadLength) {
+      for (int i = leadLength; i < method.length - 1; i += leadLength) {
         final y = yinc * i;
         path.moveTo(0, y);
         path.lineTo(size.width, y);
@@ -232,24 +237,46 @@ class MethodPainter extends CustomPainter {
       }
     }
 
-    void drawBlueline(int n) {
-      double y = ystart;
+    void drawBlueline(int n, [bool isHuntBell = false]) {
+      double y = ystart - yinc;
       bool first = true;
+      bool active = false;
       for (final row in method) {
-        final inx = row.indexOf(n);
+        y += yinc;
+        var inx = row.indexOf(n);
+        final x = xstart + xinc * inx;
+
         if (inx == -1) {
           canvas.drawPath(path, paint);
           path.reset();
           first = true;
           continue;
         }
-        final x = xstart + xinc * inx;
+
+        if ((isHuntBell &&
+            hideTreble &&
+            !((inx > 0 && insideBells.contains(row[inx - 1])) ||
+                (inx + 1 < row.length &&
+                    insideBells.contains(row[inx + 1]))))) {
+          first = false;
+          if (active) {
+            path.lineTo(x, y);
+            canvas.drawPath(path, paint);
+            active = false;
+          }
+          path.reset();
+          path.moveTo(x, y);
+
+          continue;
+        }
+
+        active = true;
+
         if (first) {
           path.moveTo(x, y);
           first = false;
         }
         path.lineTo(x, y);
-        y += yinc;
       }
 
       canvas.drawPath(path, paint);
@@ -259,7 +286,7 @@ class MethodPainter extends CustomPainter {
     for (final (i, n) in huntBells.indexed) {
       final hue = 360 - (i / huntBells.length) * 80;
       paint.color = HSVColor.fromAHSV(1, hue, 1, 1).toColor();
-      drawBlueline(n);
+      drawBlueline(n, true);
     }
 
     final colors = [

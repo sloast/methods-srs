@@ -5,8 +5,11 @@ import 'package:methods/db/static/setup.dart' as static_db_setup;
 import 'package:methods/db/user/database.dart' show UserDatabase;
 import 'package:methods/ui/home.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferencesWithCache.create(cacheOptions: .new());
   runApp(
     MultiProvider(
       providers: [
@@ -14,6 +17,7 @@ void main() {
           create: (_) => Repository(UserDatabase(), static_db_setup.setup()),
         ),
         Provider(create: (_) => fsrs.Scheduler()),
+        Provider(create: (_) => prefs),
       ],
       child: MyApp(),
     ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fsrs/fsrs.dart' as fsrs;
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/method.dart';
 import '../core/model.dart';
@@ -262,12 +263,14 @@ class DrawBlueline extends StatefulWidget {
 }
 
 class _DrawBluelineState extends State<DrawBlueline> {
-  int step = 0;
-  int errors = 0;
+  late final SharedPreferencesWithCache prefs = context.read();
 
   final FocusNode _focusNode = FocusNode();
   late final _scrollController = ScrollController();
   late final List<List<int>> rows = widget.method.rows.toList();
+
+  int step = 0;
+  int errors = 0;
 
   void scrollDown() {
     if (_scrollController.hasClients &&
@@ -392,6 +395,7 @@ class _DrawBluelineState extends State<DrawBlueline> {
                             ? widget.method.length
                             : 0,
                         drawNums: false,
+                        hideTreble: prefs.getBool('hideTreble') ?? false,
                       ),
                     ],
                   ),

@@ -6,6 +6,7 @@ import 'package:methods/core/model.dart';
 import 'package:methods/db/user/database.dart' as udb;
 import 'package:methods/ui/method.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../db/repo.dart';
 import '../util/util.dart';
@@ -42,6 +43,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
       ];
 
   late final Repository repo = context.read();
+  late final SharedPreferencesWithCache prefs = context.read();
 
   late final allMethods = repo.searchMethods("", limit: 99999);
   final searchController = TextEditingController();
@@ -211,59 +213,71 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
             child: Column(
               spacing: 10,
               children: [
-                OutlinedButton.icon(
-                  icon: Icon(Icons.replay_outlined),
-                  label: Text('Reload'),
-                  onPressed: () => reload(),
+                Wrap(
+                  alignment: .center,
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    OutlinedButton.icon(
+                      icon: Icon(Icons.download),
+                      label: Text('Import'),
+                      onPressed: () async {
+                        final file = await FilePicker.pickFile(
+                          dialogTitle: 'Import methods.sqlite...',
+                        );
+                        if (file == null) return;
+                        final data = await file.readAsBytes();
+                        await repo.udb.import(data);
+                        repo.udb = udb.UserDatabase();
+                      },
+                    ),
+                    OutlinedButton.icon(
+                      icon: Icon(Icons.upload),
+                      label: Text('Export'),
+                      onPressed: () async {
+                        await FilePicker.saveFile(
+                          fileName: 'methods.sqlite',
+                          bytes: await repo.udb.export(),
+                        );
+                      },
+                    ),
+
+                    OutlinedButton.icon(
+                      icon: Icon(Icons.delete_forever),
+                      label: Text('Delete all data'),
+                      onPressed: () async {
+                        if (await yesNoDialog(
+                          context,
+                          'Reset Database?',
+                          Text(
+                            'Do not press yes unless you know what you are doing!',
+                          ),
+                        )) {
+                          repo.udb.reset();
+                        }
+                      },
+                    ),
+                    OutlinedButton.icon(
+                      icon: Icon(Icons.add),
+                      label: Text('Add custom method'),
+                      onPressed: () {
+                        Navigator.of(context)
+                            .push(
+                              MaterialPageRoute(builder: (ctx) => EditPage()),
+                            )
+                            .then((b) {
+                              if (b == true) reload();
+                            });
+                      },
+                    ),
+                  ],
                 ),
-                OutlinedButton.icon(
-                  icon: Icon(Icons.add),
-                  label: Text('Add method'),
-                  onPressed: () {
-                    Navigator.of(context)
-                        .push(MaterialPageRoute(builder: (ctx) => EditPage()))
-                        .then((b) {
-                          if (b == true) reload();
-                        });
-                  },
-                ),
-                OutlinedButton.icon(
-                  icon: Icon(Icons.delete_forever),
-                  label: Text('Delete all data'),
-                  onPressed: () async {
-                    if (await yesNoDialog(
-                      context,
-                      'Reset Database?',
-                      Text(
-                        'Do not press yes unless you know what you are doing!',
-                      ),
-                    )) {
-                      repo.udb.reset();
-                    }
-                  },
-                ),
-                OutlinedButton.icon(
-                  icon: Icon(Icons.download),
-                  label: Text('Import'),
-                  onPressed: () async {
-                    final file = await FilePicker.pickFile(
-                      dialogTitle: 'Import methods.sqlite...',
-                    );
-                    if (file == null) return;
-                    final data = await file.readAsBytes();
-                    await repo.udb.import(data);
-                    repo.udb = udb.UserDatabase();
-                  },
-                ),
-                OutlinedButton.icon(
-                  icon: Icon(Icons.upload),
-                  label: Text('Export'),
-                  onPressed: () async {
-                    await FilePicker.saveFile(
-                      fileName: 'methods.sqlite',
-                      bytes: await repo.udb.export(),
-                    );
-                  },
+                SwitchListTile(
+                  title: Text("Hide treble line"),
+                  value: prefs.getBool('hideTreble') ?? false,
+                  onChanged: (v) => setState(() {
+                    prefs.setBool('hideTreble', v);
+                  }),
                 ),
               ],
             ),
@@ -301,6 +315,7 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
           setState(() {
             currentPageIndex = index;
           });
+          reload();
         },
         selectedIndex: currentPageIndex,
         destinations: destinations,
